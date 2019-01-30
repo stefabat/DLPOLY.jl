@@ -5,6 +5,7 @@ using Printf
 
 export xyz2dlp,dlp2xyz
 export property,rdf,zden
+export history
 
 
 """Convert an `xyz` file into a `CONFIG` file"""
@@ -69,6 +70,74 @@ function dlp2xyz(CONFIG,xyzfile::String="CONFIG.xyz")
     end
     close(fout)
 end
+
+
+struct Frame
+    number::Int
+    atoms::Vector{String}
+    coords::Matrix{Float64}
+end
+
+
+
+"""Read a `HISTORY` file"""
+function history(HISTORY)
+    fin = open(HISTORY,"r")
+    # skip header line
+    readline(fin)
+    # read info on second line
+    info = split(readline(fin))
+    keytrj  = parse(Int,string(info[1]))
+    natms   = parse(Int,string(info[3]))
+    nframes = parse(Int,string(info[4]))
+    if keytrj > 0
+        error("possible to read a `HISTORY` file with positions only")
+    end
+
+    # initialize some arrays
+    step   = Vector{Int}(undef,nframes)
+    time   = Vector{Float64}(undef,nframes)
+    frames = Vector{Frame}(undef,nframes)
+
+
+    # start loop over frames
+    for i = 1:nframes
+        # read record i
+        reci = split(readline(fin))
+        step[i] = parse(Int,string(reci[2]))
+        time[i] = parse(Float64,string(reci[7]))
+        
+        # skip 3 lines, i.e., records ii, iii, iv
+        readline(fin);readline(fin);readline(fin)
+        
+        # now we read all atoms and the coords to
+        # create the Frame and save it in the frames
+        # array, but before I initialize some shitty
+        # temporay arrays because I don't want to
+        # think how to do it more elegantly
+        atm = Vector{String}(undef,natms)
+        xyz = Matrix{Float64}(undef,(natms,3))
+        
+        for j = 1:natms
+            # read record a
+            reca = split(readline(fin))
+            # save atom label
+            atm[j] = reca[1]
+
+            # read record b, i.e. positions
+            recb = map(string,split(readline(fin)))
+            # save coordinates of that atom
+            xyz[j,:] = map(x->parse(Float64,x),recb)
+        end
+
+        # create Frame
+        frames[i] = Frame(i,atm,xyz)
+
+    end
+
+    return frames
+end
+
 
 
 """Extract the radial distribution function from an `RDFDAT` file"""
