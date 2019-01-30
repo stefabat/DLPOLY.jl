@@ -1,6 +1,8 @@
 
 module DLPOLY
 
+using Printf
+
 export xyz2dlp,dlp2xyz
 export property,rdf,zden
 
