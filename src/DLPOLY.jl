@@ -83,7 +83,7 @@ function read_CONFIG(CONFIG)
     jump  = parse(Int,info[1])
     bc    = parse(Int,info[2])
     if bc > 0
-        box = [map(x->parse(Float64,x),split(readline(fin))) for i=1:3]
+        cell = [map(x->parse(Float64,x),split(readline(fin))) for i=1:3]
     end
     system = readlines(fin)
     close(fin)
@@ -101,9 +101,35 @@ function read_CONFIG(CONFIG)
         j += 1
     end 
 
-    return atoms,coords
+    levcfg = jump
+    imcon  = bc
+
+    return title,levcfg,imcon,cell,atoms,coords
 end
 
+
+function write_CONFIG(title,levcfg,imcon,cell,atoms,coords)
+    # open output file
+    fout = open("CONFIG.new","w")
+
+    natms = length(atoms)
+
+    # print header
+    @printf(fout,"%-80s\n",title)
+    # print keywords
+    @printf(fout,"%10i%10i%10i\n",levcfg,imcon,natms)
+    # print simulation cell
+    @printf(fout,"%20.10f%20.10f%20.10f\n",cell[1,1],cell[1,2],cell[1,3])
+    @printf(fout,"%20.10f%20.10f%20.10f\n",cell[2,1],cell[2,2],cell[2,3])
+    @printf(fout,"%20.10f%20.10f%20.10f\n",cell[3,1],cell[3,2],cell[3,3])
+
+    # print atoms
+    for i = 1:natms
+        @printf(fout,"%-8s%8i\n",atoms[i],i)
+        @printf(fout,"%20.10f%20.10f%20.10f\n",coords[i,1],coords[i,2],coords[i,3])
+    end
+    close(fout)
+end
 
 
 struct Frame
