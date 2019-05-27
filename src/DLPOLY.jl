@@ -266,7 +266,11 @@ function property(STATIS, record::String)
     # loop over blocks
     while i < length(data)
         # info[1] = step, info[2] = time, info[3] = number of entries per block
-        info = map(x->parse(Int,x),split(data[i]))
+        #info = map(x->parse(Int,x),split(data[i]))
+        info = []
+        info[1] = parse(Int,split(data[i])[1])
+        info[2] = parse(Float64,split(data[i])[2])
+        info[3] = parse(Int,split(data[i])[3])
         # save step number
         push!(step,info[1])
         # determine the blocksize
