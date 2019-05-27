@@ -2,10 +2,12 @@
 module DLPOLY
 
 using Printf
+using LinearAlgebra
 
 export xyz2dlp,dlp2xyz
 export property,rdf,zden
 export history
+export fragments_dist
 
 
 """Convert an `xyz` file into a `CONFIG` file"""
@@ -14,7 +16,7 @@ function xyz2dlp(xyzfile,configfile::String="CONFIG")
     xyz = readlines(xyzfile)
 
     # extract info from first two lines from xyz file
-    natms  = parse(xyz[1])
+    natms  = parse(Int,xyz[1])
     title = xyz[2]
 
     # DL POLY variables
@@ -40,7 +42,7 @@ function xyz2dlp(xyzfile,configfile::String="CONFIG")
     for i = 1:natms
         line = split(xyz[i+2])
         @printf(fout,"%-8s%8i\n",line[1],i)
-        coords = map(parse,line[2:4])
+        coords = map(x->parse(Float64,x),line[2:4])
         @printf(fout,"%20.10f%20.10f%20.10f\n",coords[1],coords[2],coords[3])
     end
     close(fout)
@@ -53,10 +55,10 @@ function dlp2xyz(CONFIG,xyzfile::String="CONFIG.xyz")
     fout  = open(xyzfile,"w")
     title = readline(fin)
     info  = split(readline(fin))
-    jump  = parse(info[1])
-    bc    = parse(info[2])
+    jump  = parse(Int,info[1])
+    bc    = parse(Int,info[2])
     if bc > 0
-        box = [map(parse,split(readline(fin))) for i=1:3]
+        box = [map(x->parse(Float64,x),split(readline(fin))) for i=1:3]
     end
     system = readlines(fin)
     close(fin)
@@ -65,7 +67,7 @@ function dlp2xyz(CONFIG,xyzfile::String="CONFIG.xyz")
     write(fout,title,"\n")
     for i = 1:2+jump:length(system)
         atom   = split(system[i])[1]
-        coords = map(parse,(split(system[i+1])))
+        coords = map(x->parse(Float64,x),(split(system[i+1])))
         s = @printf(fout,"%-4s%12.6f%14.6f%14.6f\n",atom,coords[1],coords[2],coords[3])
     end
     close(fout)
@@ -139,19 +141,37 @@ function history(HISTORY)
 end
 
 
+function fragments_dist(mol1::Matrix, mol2::Matrix)
+    natm1 = size(mol1,1)
+    natm2 = size(mol2,1)
+
+    min_dist = maxintfloat()*ones(natm1)
+
+    for i=1:natm1
+        for j=1:natm2
+            d = norm(mol1[i,:]-mol2[j,:])
+            if d <= min_dist[i]
+                min_dist[i] = d
+            end
+        end
+    end
+
+    return min_dist
+end
+
 
 """Extract the radial distribution function from an `RDFDAT` file"""
 function rdf(RDFDAT)
     fin = open(RDFDAT,"r")
     title = readline(fin)
-    info = map(parse,split(readline(fin)))
+    info = map(x->parse(Int,x),split(readline(fin)))
     rdf = Matrix(info[2]+1,info[1]+1)
     for j = 1:info[1]
         for i = 1:info[2]+1
             if j > 1 && i > 1
-                rdf[i,j+1] = parse(split(readline(fin))[2])
+                rdf[i,j+1] = parse(Float64,split(readline(fin))[2])
             elseif j == 1 && i > 1
-                rdf[i,1:2] = map(parse,split(readline(fin)))
+                rdf[i,1:2] = map(x->parse(Float64,x),split(readline(fin)))
             elseif j > 1 && i == 1
                 label = split(readline(fin))
                 rdf[i,j+1] = string(label[1],"-",label[2])
@@ -170,14 +190,14 @@ end
 function zden(ZDNDAT)
     fin = open(ZDNDAT,"r")
     title = readline(fin)
-    info = map(parse,split(readline(fin)))
+    info = map(x->parse(Int,x),split(readline(fin)))
     zden = Matrix(info[2]+1,info[1]+1)
     for j = 1:info[1]
         for i = 1:info[2]+1
             if j > 1 && i > 1
-                zden[i,j+1] = parse(split(readline(fin))[2])
+                zden[i,j+1] = parse(Float64,split(readline(fin))[2])
             elseif j == 1 && i > 1
-                zden[i,1:2] = map(parse,split(readline(fin)))
+                zden[i,1:2] = map(x->parse(Float64,x),split(readline(fin)))
             elseif j > 1 && i == 1
                 label = split(readline(fin))
                 zden[i,j+1] = string(label[1])
@@ -246,13 +266,13 @@ function property(STATIS, record::String)
     # loop over blocks
     while i < length(data)
         # info[1] = step, info[2] = time, info[3] = number of entries per block
-        info = map(parse,split(data[i]))
+        info = map(x->parse(Int,x),split(data[i]))
         # save step number
         push!(step,info[1])
         # determine the blocksize
         bs = Int(ceil(info[3]/5))
         # temperature is always in the first row of the block
-        line = map(parse,split(data[i+loffset]))
+        line = map(x->parse(Float64,x),split(data[i+loffset]))
         # second entry corresponds to temperature
         push!(prop,line[lentry])
         # update iterator to jump to the next block
