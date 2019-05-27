@@ -8,6 +8,7 @@ export xyz2dlp,dlp2xyz
 export property,rdf,zden
 export history
 export fragments_dist
+export read_CONFIG
 
 
 """Convert an `xyz` file into a `CONFIG` file"""
@@ -72,6 +73,38 @@ function dlp2xyz(CONFIG,xyzfile::String="CONFIG.xyz")
     end
     close(fout)
 end
+
+
+
+function read_CONFIG(CONFIG)
+    fin   = open(CONFIG,"r")
+    fout  = open(xyzfile,"w")
+    title = readline(fin)
+    info  = split(readline(fin))
+    jump  = parse(Int,info[1])
+    bc    = parse(Int,info[2])
+    if bc > 0
+        box = [map(x->parse(Float64,x),split(readline(fin))) for i=1:3]
+    end
+    system = readlines(fin)
+    close(fin)
+    natoms = Int((length(system)/(2+jump)))
+    coords = zeros(natoms,3)
+    atoms = Vector{String}(undef,natoms)
+    j = 1
+    for i = 1:2+jump:length(system)
+        atom   = split(system[i])[1]
+        xyz = map(x->parse(Float64,x),(split(system[i+1])))
+        coords[j,1] = xyz[1]
+        coords[j,2] = xyz[2]
+        coords[j,3] = xyz[3]
+        atoms[j] = atom
+        j += 1
+    end 
+
+    return atoms,coords
+end
+
 
 
 struct Frame
