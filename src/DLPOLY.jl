@@ -8,7 +8,7 @@ export xyz2dlp,dlp2xyz
 export property,rdf,zden
 export history
 export fragments_dist
-export read_CONFIG
+export read_CONFIG,write_CONFIG
 
 
 """Convert an `xyz` file into a `CONFIG` file"""
@@ -82,8 +82,11 @@ function read_CONFIG(CONFIG)
     info  = split(readline(fin))
     jump  = parse(Int,info[1])
     bc    = parse(Int,info[2])
+    cell  = zeros(3,3)
     if bc > 0
-        cell = [map(x->parse(Float64,x),split(readline(fin))) for i=1:3]
+        for i=1:3
+           cell[i,:] = map(x->parse(Float64,x),split(readline(fin)))
+        end
     end
     system = readlines(fin)
     close(fin)
