@@ -267,7 +267,7 @@ function property(STATIS, record::String)
     while i < length(data)
         # info[1] = step, info[2] = time, info[3] = number of entries per block
         #info = map(x->parse(Int,x),split(data[i]))
-        info = []
+        info = Vector(undef,3)
         info[1] = parse(Int,split(data[i])[1])
         info[2] = parse(Float64,split(data[i])[2])
         info[3] = parse(Int,split(data[i])[3])
