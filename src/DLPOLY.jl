@@ -78,7 +78,6 @@ end
 
 function read_CONFIG(CONFIG)
     fin   = open(CONFIG,"r")
-    fout  = open(xyzfile,"w")
     title = readline(fin)
     info  = split(readline(fin))
     jump  = parse(Int,info[1])
